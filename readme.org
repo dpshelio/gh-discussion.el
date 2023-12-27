@@ -1,0 +1,587 @@
+* gh-discussion interface
+
+
+[[https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions][Discussions seem only available through the GraphQL API]]. (and it [[https://github.com/joaom00/gh-discussion/blob/main/cmd/list.go#L57][seems is what gh-discussion extension uses]])
+
+[[https://github.com/vermiculus/graphql.el][graphql.el]] may become useful!
+
+From examples of the gh graphql api ([[https://gist.github.com/oleksis/d40a48a343b7e81fe0c6a940f086f43c][@oleksis]])
+
+** obtain first discussion
+
+#+begin_src bash  :var myowner="the-turing-way" myrepo="the-turing-way" :results output
+  gh api graphql -H 'GraphQL-Features: discussions_api' -F owner="${myowner}" -F name="${myrepo}" \
+  -f query='
+  query($name: String!, $owner: String!) {
+    repository(owner: $owner, name: $name) {
+      discussions(first: 1){
+        nodes{
+          number title body category{id name}
+        }
+      }
+    }
+  }' | jq
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "data": {
+    "repository": {
+      "discussions": {
+        "nodes": [
+          {
+            "number": 3081,
+            "title": "Technical Improvements to enhance the usability of The Turing Way Book (GSoC 2023)",
+            "body": "## Summary \r\n\r\nOver the past four years, the book has undergone significant growth, making it challenging to navigate. The project/idea focuses on enhancing the usability of The Turing Way book by improving the user interface and creating a more personalized browsing experience based on the user's profile. This involves making some additional improvements to  an existing Python package developed by the team  in 2022 integrating the updated package with the book.\r\n\r\n## What needs to be done?\r\n\r\n- Making browsing experience less confusing by displaying the tag of the selected ‘pathway’, rather than all tags associated with a chapter.\r\n- Creating a new feature like 'Description' in [profiles.yml](https://github.com/alan-turing-institute/bio-Turing-Way/blob/main/master/profiles.yml) page for each profile.\r\n\r\n## Who can help?\r\n\r\nUsers of The Turing Way book who may have suggestions for improving the usability of the Turing Way book are encouraged to share their feedback.\r\n\r\n\r\n",
+            "category": {
+              "id": "DIC_kwDOCUf6vs4CONzr",
+              "name": "Ideas"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
+#+end_example
+
+
+** obtain first 10 discussions
+
+#+begin_src bash  :var myowner="the-turing-way" myrepo="the-turing-way" :results output
+  gh api graphql -H 'GraphQL-Features: discussions_api' -F owner="${myowner}" -F name="${myrepo}" \
+  -f query='
+  query($name: String!, $owner: String!) {
+      repository(owner: $owner, name: $name) {
+          discussions(first: 10) {
+              # type: DiscussionConnection
+              totalCount # Int!
+
+              pageInfo {
+                  # type: PageInfo (from the public schema)
+                  startCursor
+                  endCursor
+                  hasNextPage
+                  hasPreviousPage
+              }
+
+              edges {
+                  # type: DiscussionEdge
+                  cursor
+                  node {
+                      # type: Discussion
+                      id
+                  }
+              }
+
+              nodes {
+                  # type: Discussion
+                  number title id
+              }
+          }
+      }
+  }' | jq
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{
+  "data": {
+    "repository": {
+      "discussions": {
+        "totalCount": 10,
+        "pageInfo": {
+          "startCursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOS0xNVQyMzo1NDoyNCswMTowMM4AT1Mn",
+          "endCursor": "Y3Vyc29yOnYyOpK5MjAyMi0wOS0zMFQxOTowMDoxMSswMTowMM4AQ1gk",
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        },
+        "edges": [
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOS0xNVQyMzo1NDoyNCswMTowMM4AT1Mn",
+            "node": {
+              "id": "D_kwDOCUf6vs4AT1Mn"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0zMFQxNTozOTowNSswMTowMM4AURvw",
+            "node": {
+              "id": "D_kwDOCUf6vs4AURvw"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0zMVQxNjoxMDoxNSswMTowMM4AQXeI",
+            "node": {
+              "id": "D_kwDOCUf6vs4AQXeI"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0xNVQxNDoxMzowNCswMTowMM4AUdq6",
+            "node": {
+              "id": "D_kwDOCUf6vs4AUdq6"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0xMFQxMjoxODoyNyswMTowMM4ATOWl",
+            "node": {
+              "id": "D_kwDOCUf6vs4ATOWl"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNi0xMlQxMToyOTo1OCswMTowMM4AQiFE",
+            "node": {
+              "id": "D_kwDOCUf6vs4AQiFE"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wMy0xMFQxNTozODo1NiswMDowMM4AQucg",
+            "node": {
+              "id": "D_kwDOCUf6vs4AQucg"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMi0xMi0xOVQxNzowNToxMyswMDowMM4AQ1hk",
+            "node": {
+              "id": "D_kwDOCUf6vs4AQ1hk"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMi0xMC0xNFQxNDo0MzoxNSswMTowMM4AREQc",
+            "node": {
+              "id": "D_kwDOCUf6vs4AREQc"
+            }
+          },
+          {
+            "cursor": "Y3Vyc29yOnYyOpK5MjAyMi0wOS0zMFQxOTowMDoxMSswMTowMM4AQ1gk",
+            "node": {
+              "id": "D_kwDOCUf6vs4AQ1gk"
+            }
+          }
+        ],
+        "nodes": [
+          {
+            "number": 3081,
+            "title": "Technical Improvements to enhance the usability of The Turing Way Book (GSoC 2023)",
+            "id": "D_kwDOCUf6vs4AT1Mn"
+          },
+          {
+            "number": 3204,
+            "title": "Synthesize TTW Core Team meeting questions about Governance",
+            "id": "D_kwDOCUf6vs4AURvw"
+          },
+          {
+            "number": 2552,
+            "title": "Phase 1: Community Research - Learning About The Turing Way",
+            "id": "D_kwDOCUf6vs4AQXeI"
+          },
+          {
+            "number": 3215,
+            "title": "Core team meeting update: May and June 2023",
+            "id": "D_kwDOCUf6vs4AUdq6"
+          },
+          {
+            "number": 3018,
+            "title": "2023 Weekly Community Updates",
+            "id": "D_kwDOCUf6vs4ATOWl"
+          },
+          {
+            "number": 2610,
+            "title": "Phase 2: From Research to Practice - Next Steps",
+            "id": "D_kwDOCUf6vs4AQiFE"
+          },
+          {
+            "number": 2633,
+            "title": "Reviewers and editors - update thread",
+            "id": "D_kwDOCUf6vs4AQucg"
+          },
+          {
+            "number": 2646,
+            "title": "Core Team Working Group Trial: Oct 2022-March 2023",
+            "id": "D_kwDOCUf6vs4AQ1hk"
+          },
+          {
+            "number": 2735,
+            "title": "Community-led paper for The Turing Way",
+            "id": "D_kwDOCUf6vs4AREQc"
+          },
+          {
+            "number": 2644,
+            "title": "[Phase 0] Digital Gardening: Community Events & Communication Review",
+            "id": "D_kwDOCUf6vs4AQ1gk"
+          }
+        ]
+      }
+    }
+  }
+}
+#+end_example
+
+** obtain thread from a particular discussion
+
+#+begin_src json
+  "number": 3081,
+  "title": "Technical Improvements to enhance the usability of The Turing Way Book (GSoC 2023)",
+  "id": "D_kwDOCUf6vs4AT1Mn"
+#+end_src
+
+#+begin_src bash  :var myowner="the-turing-way" myrepo="the-turing-way" number=3081 :results output
+  echo ${number}
+  gh api graphql -H 'GraphQL-Features: discussions_api' -F owner="${myowner}" -F name="${myrepo}" \
+  -f query='
+  query($name: String!, $owner: String!) {
+      repository(owner: $owner, name: $name) {
+          discussion(number: 3081) {
+                id title body comments(first:20) {
+              # type: DiscussionConnection
+              #   totalCount # Int!
+              # pageInfo {
+              #     # type: PageInfo (from the public schema)
+              #     startCursor
+              #     endCursor
+              #     hasNextPage
+              #     hasPreviousPage
+              # }
+              edges {
+                  # type: DiscussionEdge
+                  cursor
+                  node {
+                      # type: Discussion
+                      id createdAt body  isAnswer replies
+                  }
+              } }
+
+              # nodes {
+              #     # type: Discussion
+              #     number title id
+              # }
+          }
+      }
+  }' | jq
+#+end_src
+
+#+RESULTS:
+#+begin_example
+3081
+{
+  "errors": [
+    {
+      "path": [
+        "query",
+        "repository",
+        "discussion",
+        "comments",
+        "edges",
+        "node",
+        "replies"
+      ],
+      "extensions": {
+        "code": "selectionMismatch",
+        "nodeName": "field 'replies'",
+        "typeName": "DiscussionCommentConnection"
+      },
+      "locations": [
+        {
+          "line": 20,
+          "column": 49
+        }
+      ],
+      "message": "Field must have selections (field 'replies' returns DiscussionCommentConnection but has no selections. Did you mean 'replies { ... }'?)"
+    }
+  ]
+}
+#+end_example
+
+That doesn't includes the responses to a particular comment. For that we need ~replies~, which returns an object (like, reaactions)
+This can be done as:
+
+#+begin_src bash  :var myowner="the-turing-way" myrepo="the-turing-way" number=3081 :results output
+  echo ${number}
+  gh api graphql -H 'GraphQL-Features: discussions_api' -F owner="${myowner}" -F name="${myrepo}" \
+  -f query='
+  query($name: String!, $owner: String!) {
+      repository(owner: $owner, name: $name) {
+          discussion(number: 3081) {
+                id title body comments(first:20) {
+              # type: DiscussionConnection
+              #   totalCount # Int!
+              # pageInfo {
+              #     # type: PageInfo (from the public schema)
+              #     startCursor
+              #     endCursor
+              #     hasNextPage
+              #     hasPreviousPage
+              # }
+              edges {
+                  # type: DiscussionEdge
+                  cursor
+                  node {
+                      # type: Discussion
+                      id createdAt body  isAnswer
+                      replies(first:10){
+                      totalCount
+                      edges{node{id}}}
+                  }
+              } }
+
+              # nodes {
+              #     # type: Discussion
+              #     number title id
+              # }
+          }
+      }
+  }' | jq
+#+end_src
+
+#+RESULTS:
+#+begin_example
+3081
+{
+  "data": {
+    "repository": {
+      "discussion": {
+        "id": "D_kwDOCUf6vs4AT1Mn",
+        "title": "Technical Improvements to enhance the usability of The Turing Way Book (GSoC 2023)",
+        "body": "## Summary \r\n\r\nOver the past four years, the book has undergone significant growth, making it challenging to navigate. The project/idea focuses on enhancing the usability of The Turing Way book by improving the user interface and creating a more personalized browsing experience based on the user's profile. This involves making some additional improvements to  an existing Python package developed by the team  in 2022 integrating the updated package with the book.\r\n\r\n## What needs to be done?\r\n\r\n- Making browsing experience less confusing by displaying the tag of the selected ‘pathway’, rather than all tags associated with a chapter.\r\n- Creating a new feature like 'Description' in [profiles.yml](https://github.com/alan-turing-institute/bio-Turing-Way/blob/main/master/profiles.yml) page for each profile.\r\n\r\n## Who can help?\r\n\r\nUsers of The Turing Way book who may have suggestions for improving the usability of the Turing Way book are encouraged to share their feedback.\r\n\r\n\r\n",
+        "comments": {
+          "edges": [
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNS0yMlQxOTo1MDozNCswMTowMM4AWxt0",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AWxt0",
+                "createdAt": "2023-05-22T18:50:34Z",
+                "body": "Thanks for this Arya. I have moved the questions you tested today on @Arielle-Bennett and @GabinWK, integrating their feedback, in this form: [https://forms.gle/RnycLrfH1fZ5biyF8](https://forms.gle/RnycLrfH1fZ5biyF8).  You can share them in the Slack channel this week and we can gather some more response to inform your work.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNi0yMVQxOToxNzowOSswMTowMM4AX0oF",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AX0oF",
+                "createdAt": "2023-06-21T18:17:09Z",
+                "body": "## Status Update (June 15, 2023)\r\n\r\n### Work Done :\r\n-   Learned more about the Turing Way community during the community bonding period.\r\n-   Interacted with a few people and received their feedback about the book’s usability.\r\n-   Implemented a description feature for each pathway as mentioned in the proposal and sent the pull request. [link #42](https://github.com/alan-turing-institute/bio-Turing-Way/pull/42)\r\n-   Discovered the Web Speech API, which could assist in text-to-speech conversion, and explored it briefly. [link : Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API)\r\n\r\n### Blockers :\r\n   - Faced an error related to pre-commit hook while trying to push the work to GitHub, but I was able to fix it.\r\n   \r\n### Planned :\r\n-   Explore more about Web Speech API ( learn and test its working).\r\n-   Work on making the browsing experience less confusing by modifying chapter links and profile tags based on a selected 'pathway,' instead of displaying all tags associated with a chapter ( as mentioned in the proposal ).",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNi0yMVQxOTozMjowNyswMTowMM4AX0p5",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AX0p5",
+                "createdAt": "2023-06-21T18:32:07Z",
+                "body": "## Status Update (June 21, 2023)\r\n\r\n### Work Done :\r\n\r\n-   Fixed the deployment issue encountered during testing of pull request [#42](https://github.com/alan-turing-institute/bio-Turing-Way/pull/42)\r\n-   Explored online resources, including tutorials, and articles, to gain an understanding of the implementation of Web Speech API in web applications.    \r\n-   Worked on the issue of displaying all profile tag/labels at the top of the page for a chapter visited when a single profile is selected. \r\n    - Implemented changes to show only the original profile selected by the user. \r\n    - Sent a pull request with the changes. [link : #43](https://github.com/alan-turing-institute/bio-Turing-Way/pull/43) \r\n\r\n### Blockers : \r\n None\r\n\r\n### Planned :\r\n- Adding color to the badge based on the profile and enabling navigation to the profile page when the badge is clicked.\r\n- Work on handling the condition when the user accesses a chapter not via the pathway's landing page but through the navigation menu or chapter links on the welcome page.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNi0yOFQxOTo0Mjo0NyswMTowMM4AYEBU",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AYEBU",
+                "createdAt": "2023-06-28T18:42:47Z",
+                "body": "## Status Update (June 28, 2023)\r\n\r\n### Work Done :\r\n\r\n-   Worked on assigning colours to badges based on the user's profile. However the correct colour of the profile is not being displayed accurately and it needs to be fixed.\r\n-   Worked on enabling navigation to the profile landing page when the badge is clicked. Some style changes of the badge element are required before the work can be pushed.\r\n### Blockers : \r\n None\r\n\r\n### Planned :\r\n- Complete the task of assigning colours to badges by ensuring the proper mapping of colours to user profiles, and then push the work.\r\n- Complete the implementation of the navigation to the profile landing page when a badge is clicked and push the work. \r\n- Work on handling the situation where a user accesses a chapter by using the navigation menu or chapter links on the welcome page\r\n- Get suggestions and review from mentors.\r\n- Make additional UI improvements if needed.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNi0yOVQxMjoyNzowOSswMTowMM4AYFmn",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AYFmn",
+                "createdAt": "2023-06-29T11:27:09Z",
+                "body": "Thank you so muych @arya1302 for the beautiful work and progressing in your project.\r\n@likeajumprope, @arya1302 and I met today to catch up. She is working on the PR now to fix some issues as described above: https://github.com/alan-turing-institute/bio-Turing-Way/.\r\n\r\nArya, please do share the link of your update notes with us in Slack as GitHub isn't notifying me automatically.\r\nVery excited to see the ideas you are implementing in the test repository.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 1,
+                  "edges": [
+                    {
+                      "node": {
+                        "id": "DC_kwDOCUf6vs4AYFpB"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0wNVQxOTozNToyMiswMTowMM4AYSPx",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AYSPx",
+                "createdAt": "2023-07-05T18:35:22Z",
+                "body": "## Status Update (July 5, 2023)\r\n\r\n### Work Done :\r\n\r\n-  Completed the implementation for assigning colours to badges. \r\n-  Fixed the situation where a user accesses a chapter using the navigation menu or links on the welcome page.\r\n-  Started working on the mid-term report. \r\n### Blockers : \r\n None\r\n\r\n### Planned :\r\n- Navigation to the profile landing page on badge click still needs to be fixed. So work on that.\r\n- Identify and fix any issues, if present.\r\n- Push all pending changes.\r\n- Get suggestions and review from mentors.\r\n- Continue working on the mid-term report.\r\n",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 1,
+                  "edges": [
+                    {
+                      "node": {
+                        "id": "DC_kwDOCUf6vs4AYTv3"
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0xMlQxOToxMDoxMSswMTowMM4AYh6e",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AYh6e",
+                "createdAt": "2023-07-12T18:10:11Z",
+                "body": "## Status Update (July 12, 2023)\r\n\r\n### Work Done :\r\n\r\n-  Fixed the issue regarding the navigation to the profile landing page on badge click.\r\n-  Went through the changes and found an issue where, instead of the original profile selected by the user, all badges were displayed when navigating to the next page within a chapter. Started working on this issue.\r\n\r\n\r\n### Blockers : \r\n - A blocker related to pre commit occurred during merging of pull request [#42](https://github.com/alan-turing-institute/bio-Turing-Way/pull/42). The pylint hook failed. \r\n\r\n### Planned :\r\n- Fix the issues found in the implementation.\r\n- Plan and implement the integration of Web Speech API for text to speech conversion.\r\n\r\n",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0xOVQxODoxMjo1NSswMTowMM4AYwx-",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AYwx-",
+                "createdAt": "2023-07-19T17:12:55Z",
+                "body": "## Status Update (July 19, 2023)\r\n\r\n### Work Done :\r\n\r\n-  Worked on the issue where all badges are displayed when navigating to the next page within a chapter, but couldn't complete it. \r\n-  Worked on implementing the Web Speech API, but there's still much more to be done.\r\n### Blockers : \r\n - None\r\n### Planned :\r\n- Resolve the pre commit error occurred during the merging of pull request [42](https://github.com/alan-turing-institute/bio-Turing-Way/pull/42)\r\n- Fix the issue related to the next page navigation within a chapter\r\n- Work on text-to-speech implementation ",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wNy0yNlQyMDoxMDo1NiswMTowMM4AZAUs",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AZAUs",
+                "createdAt": "2023-07-26T19:10:56Z",
+                "body": "## Status Update (July 26, 2023)\r\n\r\n### Work Done :\r\n\r\n-  Worked on implementing the Web Speech API. \r\n     - Tested it by creating a small website and the API works fine there. However, there are occasional issues with speech synthesis performance. \r\n     - Implemented the necessary UI components for playing the generated audio in The Turing Way project.\r\n     - Tried to integrate the API into the project, but due to some issues, there is no audio output.\r\n### Blockers : \r\n - None\r\n### Planned :\r\n- Work on text-to-speech implementation ",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0wMlQxOTozNDo1MSswMTowMM4AZQMc",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AZQMc",
+                "createdAt": "2023-08-02T18:34:51Z",
+                "body": "## Status Update (August 2 , 2023)\r\n\r\n### Work Done :\r\n- The idea described in the PR [#43](https://github.com/alan-turing-institute/bio-Turing-Way/pull/43) does not work well in some situations. So I worked on finding new ways\r\n- Found that sessionStorage can be used to save data for a session. This can be used to keep track of the profile selected by user. Based on this, I started  working on the new approach using sessionStorage.\r\n\r\n### Blockers : \r\n - None\r\n### Planned :\r\n- Complete the implementation of the new approach and test it.\r\n- Work on moving the implementation to the main repository",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0wOVQxODo1NDoxMyswMTowMM4AZfpZ",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AZfpZ",
+                "createdAt": "2023-08-09T17:54:13Z",
+                "body": "## Status Update (August 9 , 2023)\r\n\r\n### Work Done :\r\n-  For fixing the issue mentioned in [PR #43](https://github.com/alan-turing-institute/bio-Turing-Way/pull/43), implemented the new approach using sessionStorage for storing user-selected profiles.\r\n- Started working on moving the implementation to the main repository. Went through the [PR](https://github.com/alan-turing-institute/the-turing-way/pull/2246) to get a better idea. \r\n### Blockers : \r\n - None\r\n### Planned :\r\n- Push all pending changes \r\n- Complete the task of moving the implementation to the main repository.\r\n- Get suggestions and review from mentors.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0xN1QwNDo0MTozNCswMTowMM4AZvL8",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AZvL8",
+                "createdAt": "2023-08-17T03:41:34Z",
+                "body": "## Status Update (August 16 , 2023)\r\n\r\n### Work Done :\r\n-  Pushed all the pending changes related to [PR #43](https://github.com/alan-turing-institute/bio-Turing-Way/pull/43) and had them reviewed by the mentor.\r\n-  Worked on moving the implementation to the main repository. \r\n### Blockers : \r\n - None\r\n### Planned :\r\n- Complete the task of moving the implementation to the main repository.\r\n- Get suggestions and reviews from mentors.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0yM1QxOToyOTo1MSswMTowMM4AZ9lo",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AZ9lo",
+                "createdAt": "2023-08-23T18:29:51Z",
+                "body": "## Status Update (August 23 , 2023)\r\n\r\n### Work Done :\r\n-  Worked on moving the implementation to the main repository.\r\n    - The changes required for the move have been completed and the process is almost done. But i encountered some deployment errors.\r\n    - Sent a pull request with the changes #3277 \r\n\r\n### Blockers : \r\n - The deployment failed because there were conflicting package versions causing an issue.\r\n### Planned :\r\n- Fix the deployment issue \r\n- Get suggestions and reviews from mentors.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOC0zMFQxOTozNDowMCswMTowMM4AaMq7",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AaMq7",
+                "createdAt": "2023-08-30T18:34:00Z",
+                "body": "## Status Update (August 30 , 2023)\r\n\r\n### Work Done :\r\n-  Worked on moving the implementation to the main repository.\r\n    -  Resolved errors related to conflicting package versions that I had encountered earlier.\r\n    -  Due to some reason, the netlify deployment has failed again with the error message: 'Failed during stage 'building site': Build script returned a non-zero exit code: 2.\r\n    -  Downgraded the jupyter-book version to 0.11.2 and was able to build the site locally but the netlify deployment still fails\r\n    \r\n### Blockers : \r\n - The exact reason behind the netlify deployment failure is unknown\r\n### Planned :\r\n- Fix the netlify deployment error and ensure that the site runs with the implemented changes",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOS0wN1QxODoyMjoxMSswMTowMM4AaeTs",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AaeTs",
+                "createdAt": "2023-09-07T17:22:11Z",
+                "body": "## Status Update (September 6 , 2023)\r\n\r\n### Work Done :\r\n-  Fixed the Netlify deployment error caused by an incorrect publish directory path.\r\n- Worked on updating the Pathways package implementation to make it compatible with the main project's version, as there was a version mismatch between Jupyter-Book 0.11.2 used by the Pathways package and Jupyter-Book 0.13 used in the main project, which was preventing the card implementation from working correctly in the main project.  This work is not complete, and there is more to be done.\r\n### Blockers : \r\nNone\r\n### Planned :\r\n-  Work on resolving the version compatibility issue between the Pathways package and the main project by updating the Pathways package.\r\n- Get suggestions and reviews from mentors.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOS0xNFQwMToyNDo1MyswMTowMM4AasAX",
+              "node": {
+                "id": "DC_kwDOCUf6vs4AasAX",
+                "createdAt": "2023-09-14T00:24:53Z",
+                "body": "## Status Update (September 13 , 2023)\r\n\r\n### Work Done :\r\n- Resolved the version compatibility issue between the Pathways package and the main project\r\n    - Added sphinx-panels as an extension, which is necessary to enable proper functionality of welcome page cards.\r\n- Fixed the bug related to the pathway badge displaying \"null\" when a user clicks on a chapter in the card. \r\n- Worked on the implementation of text-to-speech feature:\r\n    - Created necessary UI elements, such as a speech button\r\n    - Worked on a basic text to speech implementation using Web Speech API.\r\n### Blockers : \r\nNone\r\n### Planned :\r\n- Complete the implementation of text-to-speech feature.\r\n- Push all the pending changes and get suggestions & reviews from mentors.",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            },
+            {
+              "cursor": "Y3Vyc29yOnYyOpK5MjAyMy0wOS0xNVQyMzo1NDoyNCswMTowMM4Aaxi2",
+              "node": {
+                "id": "DC_kwDOCUf6vs4Aaxi2",
+                "createdAt": "2023-09-15T22:54:24Z",
+                "body": "Brilliant work as usual Arya. Looking forward to working on this over the weekend and merge the pathway feature with a couple of profiles. Very exciting time. 💖",
+                "isAnswer": false,
+                "replies": {
+                  "totalCount": 0,
+                  "edges": []
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+#+end_example
